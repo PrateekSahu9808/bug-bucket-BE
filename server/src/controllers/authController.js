@@ -1,6 +1,6 @@
 import User from "../models/userModel.js";
 import { generateToken } from "../utils/generateToken.js";
-
+import bcrypt from "bcryptjs";
 export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -14,12 +14,24 @@ export const signup = async (req, res) => {
     //jwt token
     const token = generateToken(user._id);
     //Send cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      path: "/",
+      sameSite: "Lax",
+    });
+
     res.cookie("token", token, {
       httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      path: "/",
+      overwrite: true,
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
+
     res.status(201).json({
       message: "User registered successfully",
+      responseCode: 201,
       user: {
         id: user._id,
         name: user.name,
@@ -46,13 +58,30 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid username or password" });
+    }
+    // check if password is valid or not
     const token = generateToken(user._id);
+    res.clearCookie("token", {
+      httpOnly: true,
+      path: "/",
+      sameSite: "Lax",
+    });
+
     res.cookie("token", token, {
       httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      path: "/",
+      overwrite: true,
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
+
     res.status(200).json({
       message: "Login Successfull",
+      responseCode: 200,
       user: {
         id: user._id,
         name: user.name,
