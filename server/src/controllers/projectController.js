@@ -27,10 +27,14 @@ export const createProject = async (req, res) => {
 // get all project
 export const getProjects = async (req, res) => {
   try {
-    const filter = {};
-    // specific to user
-    // filter.owner = req.user._id
-    const projects = await Project.find(filter).populate("owner", "name email");
+    const userId = req.user._id;
+    const projects = await Project.find({
+      $or: [{ owner: userId }, { "members.userId": userId }],
+      "status.isActive": true, // Only show active projects
+    })
+      .populate("owner", "name email")
+      .sort({ updatedAt: -1 });
+
     res.status(200).json({
       success: true,
       count: projects.length,
@@ -45,7 +49,7 @@ export const getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id).populate(
       "owner",
-      "name email"
+      "name email",
     );
     if (!project) {
       return res.status(404).json({ message: "Project not found " });
