@@ -30,7 +30,6 @@ export const getProjects = async (req, res) => {
     const userId = req.user._id;
     const projects = await Project.find({
       $or: [{ owner: userId }, { "members.userId": userId }],
-      "status.isActive": true, // Only show active projects
     })
       .populate("owner", "name email")
       .sort({ updatedAt: -1 });
@@ -93,14 +92,14 @@ export const updateProject = async (req, res) => {
 
 export const deleteProject = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
+    const project = await Project.findByIdAndDelete(req.params.id);
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
-    project.status.isArchived = true;
-    project.status.isActive = false;
-    project.status.deletedAt = new Date();
-    await project.save();
+    // project.status.isArchived = true;
+    // project.status.isActive = false;
+    // project.status.deletedAt = new Date();
+    // await project.save();
     res.json({ message: "Project deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
